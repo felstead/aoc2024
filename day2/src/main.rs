@@ -6,7 +6,7 @@ fn main() {
     let levels = read_to_string("input.txt")
         .unwrap()
         .lines()
-        .map(|l| split_line_to_levels(l))
+        .map(split_line_to_levels)
         .collect::<Vec<_>>();
 
     let num_safe = levels
@@ -75,7 +75,7 @@ fn is_safe_with_dampener_naive(levels: &Vec<i32>) -> bool {
         }
     }
 
-    return false;
+    false
 }
 
 fn is_safe(levels: &Vec<i32>) -> bool {
