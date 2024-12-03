@@ -1,4 +1,4 @@
-use std::{collections::BinaryHeap, fs, hint::black_box, io::Read, time};
+use std::{collections::BinaryHeap, fs, io::Read};
 
 fn main() {
     println!();
@@ -6,11 +6,11 @@ fn main() {
     println!("  - Min Heap Result : {}", streaming_min_heap());
     println!("  - Naive Result    : {}", streaming_min_heap());
 
-    measure("MinHeap", 10, || {
+    util::measure("MinHeap", 10, || {
         streaming_min_heap();
     });
 
-    measure("Naive", 10, || {
+    util::measure("Naive", 10, || {
         naive();
     });
 }
@@ -73,26 +73,4 @@ fn get_input() -> String {
         .unwrap();
 
     input
-}
-
-pub fn measure<F: Fn()>(label: &str, iterations: usize, f: F) {
-    let mut times = Vec::new();
-
-    // Warm up
-    black_box(f());
-
-    for _ in 0..iterations {
-        let start = time::Instant::now();
-        black_box(f());
-        let end = time::Instant::now();
-        times.push(end - start);
-    }
-
-    times.sort();
-    let (min, median, max) = (times[0], times[iterations / 2], times[iterations - 1]);
-
-    println!(
-        "{}: Median time: {:?}   (min: {:?} / max: {:?})",
-        label, median, min, max
-    );
 }
