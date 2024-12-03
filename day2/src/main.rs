@@ -65,6 +65,7 @@ enum Direction {
 
 fn get_direction_and_diff(a: i32, b: i32) -> (Direction, i32) {
     let diff = a.abs_diff(b);
+    #[allow(clippy::comparison_chain)]
     if a > b {
         (Direction::Desc, diff as i32)
     } else if a < b {
@@ -101,7 +102,7 @@ fn is_safe_with_dampener_naive(levels: &[i32]) -> bool {
     }
 
     for i in 0..levels.len() {
-        let mut variant : Vec<i32> = levels.into();
+        let mut variant: Vec<i32> = levels.into();
         variant.remove(i);
 
         if is_safe(&variant) {
