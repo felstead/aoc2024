@@ -134,7 +134,7 @@ fn part1_naive_extract_string_reduced(haystack: &ByteArray2D) -> usize {
     let height = haystack.len();
 
     const NEEDLE: &[u8; 4] = b"XMAS";
-    const NEEDLE_REVERSED : &[u8;4] = b"SAMX";
+    const NEEDLE_REVERSED: &[u8; 4] = b"SAMX";
 
     // Iterate through each line and search in all eight directions
     for i in 0..width * height {
