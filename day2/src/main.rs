@@ -1,4 +1,5 @@
 use std::fs::read_to_string;
+use util::measure;
 
 fn main() {
     println!("Advent of code 2024 - day 2!");
@@ -9,50 +10,27 @@ fn main() {
         .map(split_line_to_levels)
         .collect::<Vec<_>>();
 
-    let num_safe = levels
+    measure("Num safe (part1)", 10, || {
+        levels
         .iter()
-        .fold(0, |acc, l| acc + if is_safe(l) { 1 } else { 0 });
-
-    println!("Num safe (part 1): {}", num_safe);
-
-    let num_safe_with_dampener_naive = levels.iter().fold(0, |acc, l| {
-        acc + if is_safe_with_dampener_naive(l) { 1 } else { 0 }
+        .fold(0, |acc, l| acc + if is_safe(l) { 1 } else { 0 })
     });
 
-    println!("Num safe (part 2 naive): {}", num_safe_with_dampener_naive);
+    measure("Num safe (part 2 naive)", 10, || {
+        levels.iter().fold(0, |acc, l| {
+            acc + if is_safe_with_dampener_naive(l) { 1 } else { 0 }
+        })
+    });
 
     let masks_by_level = generate_masks(10);
-    let num_safe_with_dampener_bitmasks = levels.iter().fold(0, |acc, l| {
-        acc + if is_safe_with_dampener_bitmasks(l, &masks_by_level[l.len() - 1]) {
-            1
-        } else {
-            0
-        }
-    });
-
-    println!(
-        "Num safe (part 2 with bitmasks): {}",
-        num_safe_with_dampener_bitmasks
-    );
-
-    util::measure("Dampener (naive)", 10, || {
-        let num = levels.iter().fold(0, |acc, l| {
-            acc + if is_safe_with_dampener_naive(l) { 1 } else { 0 }
-        });
-
-        assert_eq!(num, num_safe_with_dampener_naive);
-    });
-
-    util::measure("Dampener (bitmasks)", 10, || {
-        let num = levels.iter().fold(0, |acc, l| {
+    measure("Num safe (part 2 with bitmasks)", 10, || {
+        levels.iter().fold(0, |acc, l| {
             acc + if is_safe_with_dampener_bitmasks(l, &masks_by_level[l.len() - 1]) {
                 1
             } else {
                 0
             }
-        });
-
-        assert_eq!(num, num_safe_with_dampener_bitmasks);
+        })
     });
 }
 

@@ -3,15 +3,12 @@ use std::{collections::BinaryHeap, fs, io::Read};
 fn main() {
     println!();
     println!("Advent of code 2024 - day 1!");
-    println!("  - Min Heap Result : {}", streaming_min_heap());
-    println!("  - Naive Result    : {}", streaming_min_heap());
-
     util::measure("MinHeap", 10, || {
-        streaming_min_heap();
+        streaming_min_heap()
     });
 
     util::measure("Naive", 10, || {
-        naive();
+        naive()
     });
 }
 

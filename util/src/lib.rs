@@ -1,11 +1,11 @@
-use std::{hint::black_box, time};
+use std::{hint::black_box, time, fmt::Debug};
 
-pub fn measure<F: Fn()>(label: &str, iterations: usize, f: F) {
+pub fn measure<T : Debug, F: Fn() -> T>(label: &str, iterations: usize, f: F) {
     let mut times = Vec::new();
 
     // Warm up
     #[allow(clippy::unit_arg)]
-    black_box(f());
+    let result = black_box(f());
 
     for _ in 0..iterations {
         let start = time::Instant::now();
@@ -18,8 +18,8 @@ pub fn measure<F: Fn()>(label: &str, iterations: usize, f: F) {
     times.sort();
     let (min, median, max) = (times[0], times[iterations / 2], times[iterations - 1]);
 
-    println!(
-        "{}: Median time: {:?}   (min: {:?} / max: {:?})",
-        label, median, min, max
-    );
+    println!("{}: {:?}", label, result);
+
+    println!("Median time: {:?}   (min: {:?} / max: {:?})", median, min, max);
+    println!();
 }

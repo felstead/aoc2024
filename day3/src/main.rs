@@ -7,19 +7,12 @@ fn main() {
     let input = std::fs::read_to_string("input.txt").unwrap();
 
 
-    let sum_part1 = part1(&input);
-    println!("Sum (regex, part 1): {}", sum_part1);
-    let sum_part2 = part2(&input);
-    println!("Sum with do/don't (regex, part 2): {}", sum_part2);
-
     util::measure("Part 1 (regex)", 10, || {
-        let sum = part1(&input);
-        assert_eq!(sum, sum_part1);
+        part1(&input)
     });
 
     util::measure("Part 2 (regex with do/don't)", 10, || {
-        let sum = part2(&input);
-        assert_eq!(sum, sum_part2);
+        part2(&input)
     });
 }
 
