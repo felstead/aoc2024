@@ -1,5 +1,19 @@
 use util::measure;
-pub type ByteArray2D = Vec<Vec<u8>>;
+use std::ops::Index;
+
+pub struct ByteArray2D {
+    pub width: usize,
+    pub height: usize,
+    pub entries: Vec<u8>
+}
+
+impl Index<(usize, usize)> for ByteArray2D {
+    type Output = u8;
+    
+    fn index(&self, index: (usize, usize)) -> &Self::Output {
+        &self.entries[index.1 * self.width + index.0]
+    }
+}
 
 fn main() {
     println!("Advent of code 2024 - day 4!");
@@ -27,70 +41,68 @@ fn main() {
 }
 
 fn parse_input(input: &str) -> ByteArray2D {
-    let mut len: Option<usize> = None;
-    input
-        .lines()
-        .map(|l| {
-            let byte_vec: Vec<u8> = l.trim_ascii_end().as_bytes().into();
-            // Validate that they all have the same length
-            if len.is_none() {
-                len = Some(byte_vec.len());
-            } else {
-                assert_eq!(len.unwrap(), byte_vec.len());
-            }
-            byte_vec
-        })
-        .collect::<Vec<_>>()
+    let mut width: Option<usize> = None;
+    let mut entries = vec![];
+
+    let mut height = 0;
+    for l in input.lines() {
+        height += 1;
+        let line_data = l.trim_ascii_end().as_bytes();
+        // Validate that they all have the same length
+        if width.is_none() {
+            width = Some(line_data.len());
+        } else {
+            assert_eq!(width.unwrap(), line_data.len());
+        }
+        entries.extend_from_slice(line_data);
+    }
+
+    ByteArray2D {
+        width: width.unwrap(),
+        height,
+        entries
+    }
 }
 
 fn part1_naive_array_search(haystack: &ByteArray2D) -> usize {
     let mut count = 0;
-
-    let width = haystack[0].len();
-    let height = haystack.len();
-
     let needle = b"XMAS";
 
     // Iterate through each line and search in all eight directions
-    for i in 0..width * height {
-        let x = i % width;
-        let y = i / width;
-
-        if haystack[x][y] == needle[0] {
-            count += Direction::iter_all()
-                .filter(|dir| match_bytes_direction(haystack, needle, x, y, *dir))
-                .count();
+    for y in 0..haystack.height {
+        for x in 0..haystack.width {
+            if haystack[(x,y)] == needle[0] {
+                count += Direction::iter_all()
+                    .filter(|dir| match_bytes_direction(haystack, needle, x, y, *dir))
+                    .count();
+            }
         }
     }
-
     count
 }
 
 fn part1_naive_array_search_reduced(haystack: &ByteArray2D) -> usize {
     let mut count = 0;
 
-    let width = haystack[0].len();
-    let height = haystack.len();
-
     let needle = b"XMAS";
     let needle_reversed = b"SAMX";
 
     // Iterate through each line and search in all eight directions
-    for i in 0..width * height {
-        let x = i % width;
-        let y = i / width;
+    for y in 0..haystack.height {
+        for x in 0..haystack.width {
 
-        let start = haystack[x][y];
-        if start == needle[0] {
-            count += Direction::iter_reduced()
-                .filter(|dir| match_bytes_direction(haystack, needle, x, y, *dir))
-                .count();
-        }
+            let start = haystack[(x,y)];
+            if start == needle[0] {
+                count += Direction::iter_reduced()
+                    .filter(|dir| match_bytes_direction(haystack, needle, x, y, *dir))
+                    .count();
+            }
 
-        if start == needle_reversed[0] {
-            count += Direction::iter_reduced()
-                .filter(|dir| match_bytes_direction(haystack, needle_reversed, x, y, *dir))
-                .count();
+            if start == needle_reversed[0] {
+                count += Direction::iter_reduced()
+                    .filter(|dir| match_bytes_direction(haystack, needle_reversed, x, y, *dir))
+                    .count();
+            }
         }
     }
 
@@ -100,27 +112,22 @@ fn part1_naive_array_search_reduced(haystack: &ByteArray2D) -> usize {
 fn part1_naive_extract_string(haystack: &ByteArray2D) -> usize {
     let mut count = 0;
 
-    let width = haystack[0].len();
-    let height = haystack.len();
-
     const NEEDLE: &[u8; 4] = b"XMAS";
 
-    // Iterate through each line and search in all eight directions
-    for i in 0..width * height {
-        let x = i % width;
-        let y = i / width;
-
-        if haystack[x][y] == NEEDLE[0] {
-            count += Direction::iter_all()
-                .filter(|dir| {
-                    if dir.can_needle_fit(NEEDLE.len(), x, y, width, height) {
-                        let extracted = extract_string::<{ NEEDLE.len() }>(haystack, x, y, *dir);
-                        &extracted == NEEDLE
-                    } else {
-                        false
-                    }
-                })
-                .count();
+    for y in 0..haystack.height {
+        for x in 0..haystack.width {
+            if haystack[(x,y)] == NEEDLE[0] {
+                count += Direction::iter_all()
+                    .filter(|dir| {
+                        if dir.can_needle_fit(NEEDLE.len(), x, y, haystack.width, haystack.height) {
+                            let extracted = extract_string::<{ NEEDLE.len() }>(haystack, x, y, *dir);
+                            &extracted == NEEDLE
+                        } else {
+                            false
+                        }
+                    })
+                    .count();
+            }
         }
     }
 
@@ -130,28 +137,25 @@ fn part1_naive_extract_string(haystack: &ByteArray2D) -> usize {
 fn part1_naive_extract_string_reduced(haystack: &ByteArray2D) -> usize {
     let mut count = 0;
 
-    let width = haystack[0].len();
-    let height = haystack.len();
-
     const NEEDLE: &[u8; 4] = b"XMAS";
     const NEEDLE_REVERSED: &[u8; 4] = b"SAMX";
 
     // Iterate through each line and search in all eight directions
-    for i in 0..width * height {
-        let x = i % width;
-        let y = i / width;
+    for y in 0..haystack.height {
+        for x in 0..haystack.width {
 
-        if haystack[x][y] == NEEDLE[0] || haystack[x][y] == NEEDLE_REVERSED[0] {
-            count += Direction::iter_reduced()
-                .filter(|dir| {
-                    if dir.can_needle_fit(NEEDLE.len(), x, y, width, height) {
-                        let extracted = extract_string::<{ NEEDLE.len() }>(haystack, x, y, *dir);
-                        &extracted == NEEDLE || &extracted == NEEDLE_REVERSED
-                    } else {
-                        false
-                    }
-                })
-                .count();
+            if haystack[(x,y)] == NEEDLE[0] || haystack[(x,y)] == NEEDLE_REVERSED[0] {
+                count += Direction::iter_reduced()
+                    .filter(|dir| {
+                        if dir.can_needle_fit(NEEDLE.len(), x, y, haystack.width, haystack.height) {
+                            let extracted = extract_string::<{ NEEDLE.len() }>(haystack, x, y, *dir);
+                            &extracted == NEEDLE || &extracted == NEEDLE_REVERSED
+                        } else {
+                            false
+                        }
+                    })
+                    .count();
+            }
         }
     }
 
@@ -162,16 +166,13 @@ fn part2(haystack: &ByteArray2D) -> usize {
     let mut count = 0;
 
     // We can skip the first and last columns
-    let width = haystack[0].len();
-    let height = haystack.len();
-
-    for x in 1..width - 1 {
-        for y in 1..height - 1 {
-            if haystack[x][y] == b'A' {
-                let tl = haystack[x - 1][y - 1];
-                let tr = haystack[x + 1][y - 1];
-                let bl = haystack[x - 1][y + 1];
-                let br = haystack[x + 1][y + 1];
+    for y in 1..haystack.height-1 {
+        for x in 1..haystack.width-1 {
+            if haystack[(x,y)] == b'A' {
+                let tl = haystack[(x - 1,y - 1)];
+                let tr = haystack[(x + 1,y - 1)];
+                let bl = haystack[(x - 1,y + 1)];
+                let br = haystack[(x + 1,y + 1)];
 
                 let tl_br_match = (tl == b'S' && br == b'M') || (tl == b'M' && br == b'S');
                 let tr_bl_match = (tr == b'S' && bl == b'M') || (tr == b'M' && bl == b'S');
@@ -258,14 +259,14 @@ fn extract_string<const N: usize>(
     let mut result = [0u8; N];
 
     match direction {
-        Direction::Right => (0..N).for_each(|i| result[i] = haystack[x + i][y]),
-        Direction::DownRight => (0..N).for_each(|i| result[i] = haystack[x + i][y + i]),
-        Direction::Down => (0..N).for_each(|i| result[i] = haystack[x][y + i]),
-        Direction::DownLeft => (0..N).for_each(|i| result[i] = haystack[x - i][y + i]),
-        Direction::Left => (0..N).for_each(|i| result[i] = haystack[x - i][y]),
-        Direction::UpLeft => (0..N).for_each(|i| result[i] = haystack[x - i][y - i]),
-        Direction::Up => (0..N).for_each(|i| result[i] = haystack[x][y - i]),
-        Direction::UpRight => (0..N).for_each(|i| result[i] = haystack[x + i][y - i]),
+        Direction::Right => (0..N).for_each(|i| result[i] = haystack[(x + i,y)]),
+        Direction::DownRight => (0..N).for_each(|i| result[i] = haystack[(x + i,y + i)]),
+        Direction::Down => (0..N).for_each(|i| result[i] = haystack[(x,y + i)]),
+        Direction::DownLeft => (0..N).for_each(|i| result[i] = haystack[(x - i,y + i)]),
+        Direction::Left => (0..N).for_each(|i| result[i] = haystack[(x - i,y)]),
+        Direction::UpLeft => (0..N).for_each(|i| result[i] = haystack[(x - i,y - i)]),
+        Direction::Up => (0..N).for_each(|i| result[i] = haystack[(x,y - i)]),
+        Direction::UpRight => (0..N).for_each(|i| result[i] = haystack[(x + i,y - i)]),
     };
 
     result
@@ -278,23 +279,20 @@ fn match_bytes_direction(
     y: usize,
     direction: Direction,
 ) -> bool {
-    let width: usize = haystack[0].len();
-    let height = haystack.len();
-
     let mut it = needle.iter().enumerate();
 
-    if !direction.can_needle_fit(needle.len(), x, y, width, height) {
+    if !direction.can_needle_fit(needle.len(), x, y, haystack.width, haystack.height) {
         false
     } else {
         match direction {
-            Direction::Right => it.all(|(i, b)| haystack[x + i][y] == *b),
-            Direction::DownRight => it.all(|(i, b)| haystack[x + i][y + i] == *b),
-            Direction::Down => it.all(|(i, b)| haystack[x][y + i] == *b),
-            Direction::DownLeft => it.all(|(i, b)| haystack[x - i][y + i] == *b),
-            Direction::Left => it.all(|(i, b)| haystack[x - i][y] == *b),
-            Direction::UpLeft => it.all(|(i, b)| haystack[x - i][y - i] == *b),
-            Direction::Up => it.all(|(i, b)| haystack[x][y - i] == *b),
-            Direction::UpRight => it.all(|(i, b)| haystack[x + i][y - i] == *b),
+            Direction::Right => it.all(|(i, b)| haystack[(x + i,y)] == *b),
+            Direction::DownRight => it.all(|(i, b)| haystack[(x + i,y + i)] == *b),
+            Direction::Down => it.all(|(i, b)| haystack[(x,y + i)] == *b),
+            Direction::DownLeft => it.all(|(i, b)| haystack[(x - i,y + i)] == *b),
+            Direction::Left => it.all(|(i, b)| haystack[(x - i,y)] == *b),
+            Direction::UpLeft => it.all(|(i, b)| haystack[(x - i,y - i)] == *b),
+            Direction::Up => it.all(|(i, b)| haystack[(x,y - i)] == *b),
+            Direction::UpRight => it.all(|(i, b)| haystack[(x + i,y - i)] == *b),
         }
     }
 }
@@ -314,8 +312,8 @@ mod tests {
                            S..S..S\n";
 
         let haystack = parse_input(input);
-        let width = haystack[0].len();
-        let height = haystack.len();
+        let width = haystack.width;
+        let height = haystack.height;
 
         let needle = b"XMAS";
         let needle_reversed = b"SAMX";
