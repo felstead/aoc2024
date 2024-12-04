@@ -1,15 +1,15 @@
-use util::measure;
 use std::ops::Index;
+use util::measure;
 
 pub struct ByteArray2D {
     pub width: usize,
     pub height: usize,
-    pub entries: Vec<u8>
+    pub entries: Vec<u8>,
 }
 
 impl Index<(usize, usize)> for ByteArray2D {
     type Output = u8;
-    
+
     fn index(&self, index: (usize, usize)) -> &Self::Output {
         &self.entries[index.1 * self.width + index.0]
     }
@@ -23,6 +23,10 @@ fn main() {
 
     measure("Part 1 (naive array search)", 10, || {
         part1_naive_array_search(&haystack)
+    });
+
+    measure("Part 1 (naive array search, but iterate columns instead of rows)", 10, || {
+        part1_naive_array_search_column_first(&haystack)
     });
 
     measure("Part 1 (naive array search reduced)", 10, || {
@@ -60,7 +64,7 @@ fn parse_input(input: &str) -> ByteArray2D {
     ByteArray2D {
         width: width.unwrap(),
         height,
-        entries
+        entries,
     }
 }
 
@@ -71,7 +75,24 @@ fn part1_naive_array_search(haystack: &ByteArray2D) -> usize {
     // Iterate through each line and search in all eight directions
     for y in 0..haystack.height {
         for x in 0..haystack.width {
-            if haystack[(x,y)] == needle[0] {
+            if haystack[(x, y)] == needle[0] {
+                count += Direction::iter_all()
+                    .filter(|dir| match_bytes_direction(haystack, needle, x, y, *dir))
+                    .count();
+            }
+        }
+    }
+    count
+}
+
+fn part1_naive_array_search_column_first(haystack: &ByteArray2D) -> usize {
+    let mut count = 0;
+    let needle = b"XMAS";
+
+    // Iterate through each line and search in all eight directions
+    for x in 0..haystack.width {
+        for y in 0..haystack.height {
+            if haystack[(x, y)] == needle[0] {
                 count += Direction::iter_all()
                     .filter(|dir| match_bytes_direction(haystack, needle, x, y, *dir))
                     .count();
@@ -90,8 +111,7 @@ fn part1_naive_array_search_reduced(haystack: &ByteArray2D) -> usize {
     // Iterate through each line and search in all eight directions
     for y in 0..haystack.height {
         for x in 0..haystack.width {
-
-            let start = haystack[(x,y)];
+            let start = haystack[(x, y)];
             if start == needle[0] {
                 count += Direction::iter_reduced()
                     .filter(|dir| match_bytes_direction(haystack, needle, x, y, *dir))
@@ -116,11 +136,12 @@ fn part1_naive_extract_string(haystack: &ByteArray2D) -> usize {
 
     for y in 0..haystack.height {
         for x in 0..haystack.width {
-            if haystack[(x,y)] == NEEDLE[0] {
+            if haystack[(x, y)] == NEEDLE[0] {
                 count += Direction::iter_all()
                     .filter(|dir| {
                         if dir.can_needle_fit(NEEDLE.len(), x, y, haystack.width, haystack.height) {
-                            let extracted = extract_string::<{ NEEDLE.len() }>(haystack, x, y, *dir);
+                            let extracted =
+                                extract_string::<{ NEEDLE.len() }>(haystack, x, y, *dir);
                             &extracted == NEEDLE
                         } else {
                             false
@@ -143,12 +164,12 @@ fn part1_naive_extract_string_reduced(haystack: &ByteArray2D) -> usize {
     // Iterate through each line and search in all eight directions
     for y in 0..haystack.height {
         for x in 0..haystack.width {
-
-            if haystack[(x,y)] == NEEDLE[0] || haystack[(x,y)] == NEEDLE_REVERSED[0] {
+            if haystack[(x, y)] == NEEDLE[0] || haystack[(x, y)] == NEEDLE_REVERSED[0] {
                 count += Direction::iter_reduced()
                     .filter(|dir| {
                         if dir.can_needle_fit(NEEDLE.len(), x, y, haystack.width, haystack.height) {
-                            let extracted = extract_string::<{ NEEDLE.len() }>(haystack, x, y, *dir);
+                            let extracted =
+                                extract_string::<{ NEEDLE.len() }>(haystack, x, y, *dir);
                             &extracted == NEEDLE || &extracted == NEEDLE_REVERSED
                         } else {
                             false
@@ -166,13 +187,13 @@ fn part2(haystack: &ByteArray2D) -> usize {
     let mut count = 0;
 
     // We can skip the first and last columns
-    for y in 1..haystack.height-1 {
-        for x in 1..haystack.width-1 {
-            if haystack[(x,y)] == b'A' {
-                let tl = haystack[(x - 1,y - 1)];
-                let tr = haystack[(x + 1,y - 1)];
-                let bl = haystack[(x - 1,y + 1)];
-                let br = haystack[(x + 1,y + 1)];
+    for y in 1..haystack.height - 1 {
+        for x in 1..haystack.width - 1 {
+            if haystack[(x, y)] == b'A' {
+                let tl = haystack[(x - 1, y - 1)];
+                let tr = haystack[(x + 1, y - 1)];
+                let bl = haystack[(x - 1, y + 1)];
+                let br = haystack[(x + 1, y + 1)];
 
                 let tl_br_match = (tl == b'S' && br == b'M') || (tl == b'M' && br == b'S');
                 let tr_bl_match = (tr == b'S' && bl == b'M') || (tr == b'M' && bl == b'S');
@@ -259,14 +280,14 @@ fn extract_string<const N: usize>(
     let mut result = [0u8; N];
 
     match direction {
-        Direction::Right => (0..N).for_each(|i| result[i] = haystack[(x + i,y)]),
-        Direction::DownRight => (0..N).for_each(|i| result[i] = haystack[(x + i,y + i)]),
-        Direction::Down => (0..N).for_each(|i| result[i] = haystack[(x,y + i)]),
-        Direction::DownLeft => (0..N).for_each(|i| result[i] = haystack[(x - i,y + i)]),
-        Direction::Left => (0..N).for_each(|i| result[i] = haystack[(x - i,y)]),
-        Direction::UpLeft => (0..N).for_each(|i| result[i] = haystack[(x - i,y - i)]),
-        Direction::Up => (0..N).for_each(|i| result[i] = haystack[(x,y - i)]),
-        Direction::UpRight => (0..N).for_each(|i| result[i] = haystack[(x + i,y - i)]),
+        Direction::Right => (0..N).for_each(|i| result[i] = haystack[(x + i, y)]),
+        Direction::DownRight => (0..N).for_each(|i| result[i] = haystack[(x + i, y + i)]),
+        Direction::Down => (0..N).for_each(|i| result[i] = haystack[(x, y + i)]),
+        Direction::DownLeft => (0..N).for_each(|i| result[i] = haystack[(x - i, y + i)]),
+        Direction::Left => (0..N).for_each(|i| result[i] = haystack[(x - i, y)]),
+        Direction::UpLeft => (0..N).for_each(|i| result[i] = haystack[(x - i, y - i)]),
+        Direction::Up => (0..N).for_each(|i| result[i] = haystack[(x, y - i)]),
+        Direction::UpRight => (0..N).for_each(|i| result[i] = haystack[(x + i, y - i)]),
     };
 
     result
@@ -285,14 +306,14 @@ fn match_bytes_direction(
         false
     } else {
         match direction {
-            Direction::Right => it.all(|(i, b)| haystack[(x + i,y)] == *b),
-            Direction::DownRight => it.all(|(i, b)| haystack[(x + i,y + i)] == *b),
-            Direction::Down => it.all(|(i, b)| haystack[(x,y + i)] == *b),
-            Direction::DownLeft => it.all(|(i, b)| haystack[(x - i,y + i)] == *b),
-            Direction::Left => it.all(|(i, b)| haystack[(x - i,y)] == *b),
-            Direction::UpLeft => it.all(|(i, b)| haystack[(x - i,y - i)] == *b),
-            Direction::Up => it.all(|(i, b)| haystack[(x,y - i)] == *b),
-            Direction::UpRight => it.all(|(i, b)| haystack[(x + i,y - i)] == *b),
+            Direction::Right => it.all(|(i, b)| haystack[(x + i, y)] == *b),
+            Direction::DownRight => it.all(|(i, b)| haystack[(x + i, y + i)] == *b),
+            Direction::Down => it.all(|(i, b)| haystack[(x, y + i)] == *b),
+            Direction::DownLeft => it.all(|(i, b)| haystack[(x - i, y + i)] == *b),
+            Direction::Left => it.all(|(i, b)| haystack[(x - i, y)] == *b),
+            Direction::UpLeft => it.all(|(i, b)| haystack[(x - i, y - i)] == *b),
+            Direction::Up => it.all(|(i, b)| haystack[(x, y - i)] == *b),
+            Direction::UpRight => it.all(|(i, b)| haystack[(x + i, y - i)] == *b),
         }
     }
 }
