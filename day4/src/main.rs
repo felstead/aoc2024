@@ -19,6 +19,10 @@ fn main() {
         part1_naive_extract_string(&haystack)
     });
 
+    measure("Part 1 (naive array extract_string reduced)", 10, || {
+        part1_naive_extract_string_reduced(&haystack)
+    });
+
     measure("Part 2 (naive search)", 10, || part2(&haystack));
 }
 
@@ -112,6 +116,37 @@ fn part1_naive_extract_string(haystack: &ByteArray2D) -> usize {
                     if dir.can_needle_fit(NEEDLE.len(), x, y, width, height) {
                         let extracted = extract_string::<{ NEEDLE.len() }>(haystack, x, y, *dir);
                         &extracted == NEEDLE
+                    } else {
+                        false
+                    }
+                })
+                .count();
+        }
+    }
+
+    count
+}
+
+fn part1_naive_extract_string_reduced(haystack: &ByteArray2D) -> usize {
+    let mut count = 0;
+
+    let width = haystack[0].len();
+    let height = haystack.len();
+
+    const NEEDLE: &[u8; 4] = b"XMAS";
+    const NEEDLE_REVERSED : &[u8;4] = b"SAMX";
+
+    // Iterate through each line and search in all eight directions
+    for i in 0..width * height {
+        let x = i % width;
+        let y = i / width;
+
+        if haystack[x][y] == NEEDLE[0] || haystack[x][y] == NEEDLE_REVERSED[0] {
+            count += Direction::iter_reduced()
+                .filter(|dir| {
+                    if dir.can_needle_fit(NEEDLE.len(), x, y, width, height) {
+                        let extracted = extract_string::<{ NEEDLE.len() }>(haystack, x, y, *dir);
+                        &extracted == NEEDLE || &extracted == NEEDLE_REVERSED
                     } else {
                         false
                     }
