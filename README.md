@@ -16,7 +16,7 @@ Each day's solution will be organized in its own directory, named `dayX`, where 
 - `[✔]` [Day 2](day2/src/main.rs)
 - `[✔]` [Day 3](day3/src/main.rs)
 - `[✔]` [Day 4](day4/src/main.rs)
-- `[❔]` Day 5
+- `[✔]` [Day 5](day5/src/main.rs)
 - `[❔]` Day 6
 - `[❔]` Day 7
 - `[❔]` Day 8
